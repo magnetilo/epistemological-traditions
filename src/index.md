@@ -152,8 +152,174 @@ for (const c of sClusters) {
     })
     .on("mouseout", function() { sTooltip.style("opacity", "0"); });
 }
+```
 
-display(scatterContainer);
+```js
+// ── World Map ─────────────────────────────────────────────────────────────────
+import * as topojson from "npm:topojson-client";
+
+const worldData = await fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json")
+  .then(r => r.json());
+
+// Raw rows eligible for world clustering
+const wRawRows = filtered.filter(r =>
+  r.lat != null && r.lon != null &&
+  r.region !== "Global" &&
+  r.axis_pa != null && r.axis_pu != null
+);
+
+// Discrete zoom tier → geographic cell size in degrees
+function wCellDeg(k) {
+  if (k < 2)  return 30;   // tier 1: ~continent blobs
+  if (k < 4)  return 15;   // tier 2: sub-continental
+  if (k < 7)  return 7;    // tier 3: country-level
+  if (k < 10) return 3;    // tier 4: regional
+  return 1.5;              // tier 5: near-individual
+}
+
+// Compute clusters for a given zoom level k
+function computeWClusters(k) {
+  const cell = wCellDeg(k);
+  const bins = d3.rollup(
+    wRawRows,
+    rows => ({
+      lat:   d3.mean(rows, r => +r.lat),
+      lon:   d3.mean(rows, r => +r.lon),
+      pa:    d3.mean(rows, r => +r.axis_pa),
+      pu:    d3.mean(rows, r => +r.axis_pu),
+      ie:    d3.mean(rows, r => +(r.axis_ie) || 0),
+      w:     d3.sum(rows,  r => +(r.weight) || 1),
+      n:     rows.length,
+      names: rows.map(r => r.movement).filter(Boolean).sort()
+    }),
+    r => {
+      const pa = +r.axis_pa, pu = +r.axis_pu;
+      const ie = +(r.axis_ie) > 0 ? "E" : "I";
+      const latCell = Math.floor(+r.lat / cell);
+      const lonCell = Math.floor(+r.lon / cell);
+      return axisQ(pa, pu) + "_" + ie + "_" + latCell + "_" + lonCell;
+    }
+  );
+  return [...bins.entries()].map(([key, c]) => ({ ...c, q: key.split("_")[0], key }));
+}
+
+// ── Map dimensions & projection ──────────────────────────────────────────────
+const WW = 1.1*640, WH = 1.1*340;
+const wProjection = d3.geoNaturalEarth1().fitSize([WW, WH], { type: "Sphere" });
+const wPath = d3.geoPath(wProjection);
+
+const worldContainer = html`<div id="world-container" style="position:relative;width:${WW}px;height:${WH}px;flex-shrink:0;border-radius:4px;overflow:hidden">
+  <svg id="world-svg-el" width="${WW}" height="${WH}" viewBox="0 0 ${WW} ${WH}"></svg>
+</div>`;
+
+const wSvg = d3.select(worldContainer.querySelector("#world-svg-el"));
+
+// Sea background (not part of zoomable group)
+wSvg.append("rect")
+  .attr("width", WW).attr("height", WH)
+  .attr("fill", "rgba(15, 15, 15, 0.92)");
+
+// All zoomable content lives in this group
+const wMapG = wSvg.append("g").attr("id", "world-map-g");
+
+// Graticule
+wMapG.append("path")
+  .datum(d3.geoGraticule()())
+  .attr("d", wPath)
+  .attr("fill", "none")
+  .attr("stroke", "rgba(255,255,255,0.04)")
+  .attr("stroke-width", 0.4);
+
+// Countries
+const cFeatures = topojson.feature(worldData, worldData.objects.countries);
+wMapG.append("g")
+  .selectAll("path")
+  .data(cFeatures.features)
+  .join("path")
+  .attr("d", wPath)
+  .attr("fill", "rgba(68, 68, 68, 0.6)")
+  .attr("stroke", "rgba(255,255,255,0.09)")
+  .attr("stroke-width", 0.4);
+
+// Draw/redraw clusters — called on initial load and on zoom tier change
+let wCurrentTier = -1;  // reset each cell run → always redraws on filter change
+function drawWClusters(k) {
+  const tier = wCellDeg(k);
+  if (tier === wCurrentTier) return; // no tier change during zoom, skip redraw
+  wCurrentTier = tier;
+
+  const clusters = computeWClusters(k);
+  const maxW = d3.max(clusters, c => c.w) || 1;
+
+  wMapG.selectAll(".w-cluster").remove();
+
+  for (const c of clusters) {
+    const proj = wProjection([c.lon, c.lat]);
+    if (!proj) continue;
+    const [px, py] = proj;
+    const color = clusterColor(c.pa, c.pu);
+    const fillOp = 0.08 + ((c.ie + 1) / 2) * 0.52;
+
+    wMapG.append("circle")
+      .attr("class", "w-cluster")
+      .datum(c)
+      .attr("cx", px).attr("cy", py)
+      .attr("r", (2 + Math.sqrt(c.w / maxW) * 10) / k)
+      .attr("fill", color).attr("fill-opacity", fillOp)
+      .attr("stroke", color).attr("stroke-width", 1.5 / k).attr("stroke-opacity", 0.55)
+      .style("cursor", "pointer")
+      .on("mouseover", function(event) {
+        const ieLabel = c.ie > 0 ? "Extroverted" : "Introverted";
+        const shown = c.names.slice(0, 30);
+        const more = c.names.length > 30 ? `<br><span style="opacity:0.45">… +${c.names.length - 30} more</span>` : "";
+        sTooltip.style("opacity", "1").html(
+          `<strong style="color:${color}">${c.q} · ${ieLabel}</strong> <span style="opacity:0.6">${c.n} traditions</span>` +
+          `<hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:0.3rem 0">` +
+          shown.join("<br>") + more
+        );
+      })
+      .on("mousemove", function(event) {
+        sTooltip.style("left", (event.clientX + 16) + "px").style("top", (event.clientY - 10) + "px");
+      })
+      .on("mouseout", function() { sTooltip.style("opacity", "0"); });
+  }
+}
+
+// ── Zoom behaviour ────────────────────────────────────────────────────────────
+const wZoom = d3.zoom()
+  .scaleExtent([1, 12])
+  .translateExtent([[-Infinity, -Infinity], [Infinity, Infinity]])
+  .on("zoom", (event) => {
+    const k = event.transform.k;
+    window.__wZoomSave = event.transform;  // persist across re-runs
+    wMapG.attr("transform", event.transform);
+    wMapG.selectAll("path").attr("stroke-width", 0.4 / k);
+    drawWClusters(k);
+  });
+
+wSvg.call(wZoom).style("cursor", "grab")
+  .on("mousedown.cursor", function() { d3.select(this).style("cursor", "grabbing"); })
+  .on("mouseup.cursor",   function() { d3.select(this).style("cursor", "grab"); });
+
+// Double-click to reset
+wSvg.on("dblclick.zoom", () => {
+  window.__wZoomSave = d3.zoomIdentity;
+  wSvg.transition().duration(400).call(wZoom.transform, d3.zoomIdentity);
+});
+
+// Restore zoom state from previous run (survives filter changes)
+const _wt = window.__wZoomSave;
+if (_wt && (_wt.k !== 1 || _wt.x !== 0 || _wt.y !== 0)) {
+  wSvg.call(wZoom.transform, _wt);
+} else {
+  drawWClusters(1);
+}
+
+// ── Side-by-side: scatter (left) + world map (right, vertically centred) ────
+const plotsRow = html`<div style="display:flex;gap:2rem;align-items:center;flex-wrap:wrap;margin-bottom:1.5rem"></div>`;
+plotsRow.append(scatterContainer);
+plotsRow.append(worldContainer);
+display(plotsRow);
 ```
 
 ```js
