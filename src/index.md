@@ -204,7 +204,7 @@ function computeWClusters(k) {
 }
 
 // ── Map dimensions & projection ──────────────────────────────────────────────
-const WW = 1.1*640, WH = 1.1*340;
+const WW = 0.9*640, WH = 0.9*340;
 const wProjection = d3.geoNaturalEarth1().fitSize([WW, WH], { type: "Sphere" });
 const wPath = d3.geoPath(wProjection);
 
