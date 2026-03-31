@@ -394,7 +394,7 @@ Inputs.table(filtered.map(r => ({...r, quadrant: axisQuadrant(r)})), {
 
 <div style="height:3rem"></div>
 
-<h2 class="header-2">Theoretical Background</h2>
+<h2 class="header-2">Theory & Background</h2>
 
 <div class="text">Correspondences between epistemological quadrants and Jung's psychological functions and attitudes [1]:
 
