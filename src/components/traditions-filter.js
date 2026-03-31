@@ -339,7 +339,7 @@ export function formatYear(y) {
 
 // yearFit: optional object from fitYearExponential — if provided, yearRange values are
 // in transformed slider space and are inverted to actual years before filtering.
-export function filterData(raw, {quadrant, field, attitude, search, yearRange, yearFit = null}) {
+export function filterData(raw, {quadrant, field, attitude, search, yearRange, yearFit = null, geoFilter = null}) {
   const raw2 = yearRange ?? [-Infinity, Infinity];
   const yLo = yearFit ? yearFit.fromSlider(raw2[0]) : raw2[0];
   const yHi = yearFit ? yearFit.fromSlider(raw2[1]) : raw2[1];
@@ -348,6 +348,7 @@ export function filterData(raw, {quadrant, field, attitude, search, yearRange, y
     .filter(r => field === "all" || r.field === field)
     .filter(r => attitude === "all" || r.attitude === attitude)
     .filter(r => +r.year >= yLo && +r.year <= yHi)
+    .filter(r => !geoFilter || geoFilter(r))
     .filter(r => {
       if (!search) return true;
       const s = search.toLowerCase();

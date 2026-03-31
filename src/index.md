@@ -49,9 +49,11 @@ const raw = await FileAttachment("data/epistemological_traditions_v2.csv").csv({
 ```
 
 ```js
-// ── Scatter plot ––––––––––––––––––
-
 import * as d3 from "npm:d3";
+```
+
+```js
+// ── Scatter plot ––––––––––––––––––
 
 // ── Quadrant from axis values (reuses axisQuadrant defined above) ──────────
 function axisQ(pa, pu) {
@@ -59,7 +61,7 @@ function axisQ(pa, pu) {
 }
 
 // ── 3×3 spatial grid within each quadrant, I and E never mixed ─────────────
-const N = 3;
+const N = 4;
 function sBinKey(r) {
   const pa = +r.axis_pa, pu = +r.axis_pu;
   const paCell = Math.min(Math.floor(Math.abs(pa) * N), N - 1);
@@ -164,6 +166,18 @@ for (const c of sClusters) {
 ```
 
 ```js
+const wPolyMutable = Mutable(null);
+const setWPoly = (v) => { wPolyMutable.value = v; };
+```
+
+```js
+// ── Map dimensions & projection (own cell — needed by geoFilter before world map) ──
+const WW = 0.9*640, WH = 0.9*340;
+const wProjection = d3.geoNaturalEarth1().fitSize([WW, WH], { type: "Sphere" });
+const wPath = d3.geoPath(wProjection);
+```
+
+```js
 // ── World Map ─────────────────────────────────────────────────────────────────
 import * as topojson from "npm:topojson-client";
 
@@ -179,11 +193,11 @@ const wRawRows = filtered.filter(r =>
 
 // Discrete zoom tier → geographic cell size in degrees
 function wCellDeg(k) {
-  if (k < 2)  return 30;   // tier 1: ~continent blobs
-  if (k < 4)  return 15;   // tier 2: sub-continental
-  if (k < 7)  return 7;    // tier 3: country-level
-  if (k < 10) return 3;    // tier 4: regional
-  return 1.5;              // tier 5: near-individual
+  if (k < 2)  return 20;   // tier 1: ~continent blobs
+  if (k < 4)  return 10;   // tier 2: sub-continental
+  if (k < 7)  return 5;    // tier 3: country-level
+  if (k < 10) return 2;    // tier 4: regional
+  return 1;                // tier 5: near-individual
 }
 
 // Compute clusters for a given zoom level k
@@ -213,9 +227,7 @@ function computeWClusters(k) {
 }
 
 // ── Map dimensions & projection ──────────────────────────────────────────────
-const WW = 0.9*640, WH = 0.9*340;
-const wProjection = d3.geoNaturalEarth1().fitSize([WW, WH], { type: "Sphere" });
-const wPath = d3.geoPath(wProjection);
+// (wProjection, wPath, WW, WH defined in a prior cell)
 
 const worldContainer = html`<div id="world-container" style="position:relative;width:${WW}px;height:${WH}px;flex-shrink:0;border-radius:4px;overflow:hidden">
   <svg id="world-svg-el" width="${WW}" height="${WH}" viewBox="0 0 ${WW} ${WH}"></svg>
@@ -230,6 +242,9 @@ wSvg.append("rect")
 
 // All zoomable content lives in this group
 const wMapG = wSvg.append("g").attr("id", "world-map-g");
+
+// Polygon overlay (inside zoomable group — zooms/pans with the map)
+const wPolyG = wMapG.append("g").attr("id", "world-poly-overlay");
 
 // Graticule
 wMapG.append("path")
@@ -324,11 +339,170 @@ if (_wt && (_wt.k !== 1 || _wt.x !== 0 || _wt.y !== 0)) {
   drawWClusters(1);
 }
 
+// ── Polygon selection tool ────────────────────────────────────────────────────
+let wDrawMode = false;
+let wVertices = [];    // base-map [x,y] coords (wProjection space)
+let wPreviewPt = null; // base-map [x,y] of current cursor
+
+function wEnableZoom() {
+  wSvg.call(wZoom).style("cursor", "grab")
+    .on("mousedown.cursor", function() { d3.select(this).style("cursor", "grabbing"); })
+    .on("mouseup.cursor",   function() { d3.select(this).style("cursor", "grab"); });
+  wSvg.on("dblclick.zoom", () => {
+    window.__wZoomSave = d3.zoomIdentity;
+    wSvg.transition().duration(400).call(wZoom.transform, d3.zoomIdentity);
+  });
+}
+
+function wRedrawPolyOverlay() {
+  wPolyG.selectAll("*").remove();
+  // Closed polygon
+  if (wPolyMutable && wPolyMutable.length >= 3) {
+    wPolyG.append("polygon")
+      .attr("points", wPolyMutable.map(([x, y]) => x + "," + y).join(" "))
+      .attr("fill", "rgba(255,200,50,0.08)")
+      .attr("stroke", "rgba(255,200,50,0.65)")
+      .attr("stroke-width", 1.2)
+      .attr("pointer-events", "none");
+  }
+  // In-progress drawing
+  if (wDrawMode && wVertices.length > 0) {
+    for (const [x, y] of wVertices) {
+      wPolyG.append("circle")
+        .attr("cx", x).attr("cy", y).attr("r", 3)
+        .attr("fill", "rgba(255,200,50,0.9)")
+        .attr("pointer-events", "none");
+    }
+    if (wVertices.length > 1) {
+      wPolyG.append("polyline")
+        .attr("points", wVertices.map(([x, y]) => x + "," + y).join(" "))
+        .attr("fill", "none").attr("stroke", "rgba(255,200,50,0.8)")
+        .attr("stroke-width", 1.2).attr("stroke-dasharray", "5,3")
+        .attr("pointer-events", "none");
+    }
+    if (wPreviewPt) {
+      const [lx, ly] = wVertices[wVertices.length - 1];
+      const [px, py] = wPreviewPt;
+      wPolyG.append("line")
+        .attr("x1", lx).attr("y1", ly).attr("x2", px).attr("y2", py)
+        .attr("stroke", "rgba(255,200,50,0.35)").attr("stroke-width", 1.2)
+        .attr("stroke-dasharray", "5,3").attr("pointer-events", "none");
+    }
+  }
+}
+
+function wSetDrawMode(active) {
+  wDrawMode = active;
+  if (active) {
+    wSvg.on(".zoom", null);
+    wSvg.style("cursor", "crosshair");
+    polyBtn.style.background = "rgba(255,200,50,0.15)";
+    polyBtn.style.color = "#ffc832";
+    polyBtn.style.borderColor = "rgba(255,200,50,0.4)";
+  } else {
+    wVertices = [];
+    wPreviewPt = null;
+    wEnableZoom();
+    const t = window.__wZoomSave;
+    if (t && (t.k !== 1 || t.x !== 0 || t.y !== 0)) wSvg.call(wZoom.transform, t);
+    polyBtn.style.background = "rgba(20,20,28,0.85)";
+    polyBtn.style.color = "#aaa";
+    polyBtn.style.borderColor = "rgba(255,255,255,0.15)";
+  }
+}
+
+function wClosePolygon() {
+  setWPoly([...wVertices]);
+  clearBtn.style.display = "";
+  wSetDrawMode(false);
+  wRedrawPolyOverlay();
+}
+
+// Click to add vertex (skip if part of double-click)
+wSvg.on("click.poly", function(event) {
+  if (!wDrawMode) return;
+  if (event.detail >= 2) return;
+  event.stopPropagation();
+  const [mx, my] = d3.pointer(event);
+  const t = window.__wZoomSave || d3.zoomIdentity;
+  const [bx, by] = t.invert([mx, my]);
+  // Close polygon if click is within 12px of first vertex
+  if (wVertices.length >= 3) {
+    const [fx, fy] = t.apply(wVertices[0]);
+    if (Math.hypot(mx - fx, my - fy) < 12) { wClosePolygon(); return; }
+  }
+  wVertices.push([bx, by]);
+  wRedrawPolyOverlay();
+});
+
+// Double-click to close polygon
+wSvg.on("dblclick.poly", function(event) {
+  if (!wDrawMode) return;
+  event.stopPropagation();
+  if (wVertices.length > 3) wVertices.pop(); // remove vertex added by first click of dblclick
+  if (wVertices.length >= 3) wClosePolygon();
+});
+
+// Mouse move: update preview line
+wSvg.on("mousemove.poly", function(event) {
+  if (!wDrawMode || wVertices.length === 0) return;
+  const [mx, my] = d3.pointer(event);
+  const t = window.__wZoomSave || d3.zoomIdentity;
+  wPreviewPt = t.invert([mx, my]);
+  wRedrawPolyOverlay();
+});
+
+// Escape: cancel drawing or clear closed polygon
+const _wKeyDown = e => {
+  if (e.key !== "Escape") return;
+  if (wDrawMode) { wSetDrawMode(false); wRedrawPolyOverlay(); }
+  else if (wPolyMutable) { setWPoly(null); clearBtn.style.display = "none"; wRedrawPolyOverlay(); }
+};
+document.addEventListener("keydown", _wKeyDown);
+invalidation.then(() => document.removeEventListener("keydown", _wKeyDown));
+
+// Restore polygon overlay on re-run (e.g. after filter change)
+wRedrawPolyOverlay();
+
+// ── Toolbar buttons ────────────────────────────────────────────────────────────
+const polyBtn = document.createElement("button");
+polyBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="7,1 13,5 11,12 3,12 1,5"/></svg>`;
+polyBtn.title = "Draw polygon region filter  (Esc to cancel)";
+polyBtn.style.cssText = "position:absolute;top:6px;right:6px;z-index:10;background:rgba(20,20,28,0.85);border:1px solid rgba(255,255,255,0.15);border-radius:3px;padding:5px 6px;cursor:pointer;color:#aaa;display:flex;align-items:center;line-height:1;";
+
+const clearBtn = document.createElement("button");
+clearBtn.textContent = "✕";
+clearBtn.title = "Clear polygon filter  (Esc)";
+clearBtn.style.cssText = "position:absolute;top:6px;right:38px;z-index:10;background:rgba(20,20,28,0.85);border:1px solid rgba(255,200,50,0.4);border-radius:3px;padding:4px 6px;cursor:pointer;color:rgba(255,200,50,0.8);font-size:0.68rem;line-height:1;display:none;";
+
+if (wPolyMutable) clearBtn.style.display = "";
+
+polyBtn.addEventListener("click", () => {
+  if (wDrawMode) { wSetDrawMode(false); wRedrawPolyOverlay(); }
+  else wSetDrawMode(true);
+});
+
+clearBtn.addEventListener("click", () => {
+  if (wDrawMode) wSetDrawMode(false);
+  setWPoly(null);
+  clearBtn.style.display = "none";
+  wRedrawPolyOverlay();
+});
+
+worldContainer.appendChild(polyBtn);
+worldContainer.appendChild(clearBtn);
+
 // ── Side-by-side: scatter (left) + world map (right, vertically centred) ────
 const plotsRow = html`<div style="display:flex;gap:2rem;align-items:center;flex-wrap:wrap;justify-content:center;margin:1rem auto 1.5rem;"></div>`;
 plotsRow.append(scatterContainer);
 plotsRow.append(worldContainer);
 display(plotsRow);
+```
+
+```js
+const geoFilter = wPolyMutable != null
+  ? r => r.lat != null && r.lon != null && d3.polygonContains(wPolyMutable, wProjection([+r.lon, +r.lat]))
+  : null;
 ```
 
 ```js
@@ -352,7 +526,7 @@ const search = Generators.input(fi.search);
 ```
 
 ```js
-const filtered = filterData(raw, {quadrant, field, attitude, search, yearRange, yearFit});
+const filtered = filterData(raw, {quadrant, field, attitude, search, yearRange, yearFit, geoFilter});
 ```
 
 
