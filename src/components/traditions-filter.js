@@ -46,6 +46,15 @@ class RangeSlider {
     svg.appendChild(this._rail);
     svg.appendChild(this._track);
 
+    // Small center square — drag handle for panning the whole range
+    const sq = document.createElementNS(NS, "rect");
+    sq.setAttribute("rx", "2");
+    sq.style.cursor = "grab";
+    sq.style.filter = "drop-shadow(0 1px 2px rgba(0,0,0,0.5))";
+    sq.style.transition = "opacity 0.15s";
+    svg.appendChild(sq);
+    this._midSquare = sq;
+
     this._circles = values.map((_, i) => {
       const c = document.createElementNS(NS, "circle");
       c.setAttribute("r", pointRadius);
@@ -72,9 +81,11 @@ class RangeSlider {
       c.addEventListener("touchstart", (e) => this._drag(e, i), { passive: false });
     });
 
-    // Drag the filled track to shift both handles together
+    // Drag the filled track or center square to shift both handles together
     this._track.addEventListener("mousedown",  (e) => this._dragRange(e));
     this._track.addEventListener("touchstart", (e) => this._dragRange(e), { passive: false });
+    this._midSquare.addEventListener("mousedown",  (e) => this._dragRange(e));
+    this._midSquare.addEventListener("touchstart", (e) => this._dragRange(e), { passive: false });
   }
 
   _snap(v) {
@@ -117,6 +128,18 @@ class RangeSlider {
       c.setAttribute("cx", xs[i]);
       c.setAttribute("cy", cy);
     });
+
+    // Center square: 8×8, midpoint between the two handles
+    const SQ = 8;
+    const midX = (xs[0] + xs[xs.length - 1]) / 2;
+    this._midSquare.setAttribute("x",      midX - SQ / 2);
+    this._midSquare.setAttribute("y",      cy   - SQ / 2);
+    this._midSquare.setAttribute("width",  SQ);
+    this._midSquare.setAttribute("height", SQ);
+    const trackColor = Array.isArray(this._colors.tracks) ? this._colors.tracks[0] : this._colors.tracks;
+    this._midSquare.style.fill = trackColor;
+    // Hide when the two handles coincide
+    this._midSquare.style.opacity = (xs[xs.length - 1] - xs[0]) > SQ * 2 ? "1" : "0";
   }
 
   _drag(e, idx) {
@@ -151,6 +174,7 @@ class RangeSlider {
     const startX    = e.touches ? e.touches[0].clientX : e.clientX;
     const startVals = [...this._values];
     this._track.style.cursor = "grabbing";
+    this._midSquare.style.cursor = "grabbing";
     const onMove = (ev) => {
       const cx = ev.touches ? ev.touches[0].clientX : ev.clientX;
       const W  = svg.getBoundingClientRect().width || svg.clientWidth || 0;
@@ -167,6 +191,7 @@ class RangeSlider {
     };
     const onUp = () => {
       this._track.style.cursor = "grab";
+      this._midSquare.style.cursor = "grab";
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseup",   onUp);
       document.removeEventListener("touchmove", onMove);
@@ -194,11 +219,11 @@ export function createYearRangeInput(minVal = -40000, maxVal = 2000, step = 500,
     s.textContent = `
       .yr-row { display: flex; align-items: center; gap: 0.75rem;
         font-family: var(--sans-serif, sans-serif); font-size: 0.85rem; padding: 0.2rem 0; }
-      .yr-lbl { flex: 0 0 120px; color: var(--theme-foreground-muted, #ffffff); }
+      .yr-lbl { flex: 0 0 120px; color: var(--theme-foreground, #ffffff); }
       .yr-body { display: flex; align-items: center; gap: 0.6rem; flex: 1; min-width: 0; }
       .yr-svg-wrap { flex: 0 0 300px; width: 300px; min-width: 0; }
       .yr-vals { flex: 0 0 auto; font-family: 'JetBrains Mono', monospace;
-        font-size: 0.65rem; color: #ffffff; white-space: nowrap; }
+        font-size: 0.65rem; color: var(--theme-foreground, #ffffff); white-space: nowrap; }
     `;
     document.head.appendChild(s);
   }
@@ -274,7 +299,7 @@ export function createFilterInputs(yearFit = null) {
     ),
     attitude: Inputs.radio(
       ["all", "I", "E", "I/E"],
-      {label: "Attitude (Jungian)", value: "all"}
+      {label: "Attitude (Jungian)", value: "all", format: d => d.replace("all", "All").replace("I", "Introverted").replace("E", "Extraverted")}
     ),
     search: Inputs.text({
       label: "Search",

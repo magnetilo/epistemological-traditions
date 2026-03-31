@@ -6,7 +6,10 @@ title: Epistemological Traditions Map
 
 <h1 class="page-title">Epistemological & Psychological Traditions Map</h1>
 
-<p class="subtitle">Human cultural history in a quaternary model — Participatory/Abstract × Universal/Particular — mapped to Jungian functions (Feeling · Intuition · Sensation · Thinking) and attitude (Introverted/Extroverted). Colors after Goethe's <em>Farbenlehre</em>.</p>
+<p class="subtitle">Human cultural history in a quaternary model — Participatory/Abstract × Universal/Particular — mapped to Jungian functions (Feeling · Intuition · Sensation · Thinking) and attitude (Introverted/Extroverted) [1]. Colors after Goethe's <em>Farbenlehre</em> [2].</p>
+
+<p class="text">This data app explores cultural traditions and movements and their mapping into an eplistemological-psychological model. All datasets are generated using <a href="https://claude.ai">Claude</a>. More information on the model can be found in <a href="https://www.zosimolab.ch/post/four-ways-of-knowing-part-1-an-epistemological-map">Four Ways of Knowing — Part&nbsp;1</a> and <a href="https://www.zosimolab.ch/post/four-ways-of-knowing-part-2-comparative-and-critical-studies">Part&nbsp;2</a>. Some theoretical background is also provided at the bottom of each dashboard. The code and datasets are available on <a href="https://github.com/magnetilo/epistemological-traditions">Github</a>.
+</p>
 
 <div class="map-row">
 <div class="quadrant-map">
@@ -34,6 +37,12 @@ title: Epistemological Traditions Map
   <div class="qmap-bottom">Particular</div>
 </div>
 </div>
+
+<h2 class="header-2">Traditions Visualizations</h2>
+
+<p class="text">Mapping historical traditions into epistemological-psychological model (first plot) and the world coordinate system (second plot). The colors of each cluster of traditions is determined by aligning its angle in the epistemological-psychological space with Goethe's color wheel [2]. The opacity of the clusters' filling is determined by the (average) attitude, with low opacity signaling an introverted orientation and stronger opacity signaling an extroverted orientation. Explore the traditions data by hovering over the maps and apply filters. The full filtered dataset is shown in the table below.
+</p>
+
 
 ```js
 const raw = await FileAttachment("data/epistemological_traditions_v2.csv").csv({typed: true});
@@ -316,7 +325,7 @@ if (_wt && (_wt.k !== 1 || _wt.x !== 0 || _wt.y !== 0)) {
 }
 
 // ── Side-by-side: scatter (left) + world map (right, vertically centred) ────
-const plotsRow = html`<div style="display:flex;gap:2rem;align-items:center;flex-wrap:wrap;margin-bottom:1.5rem"></div>`;
+const plotsRow = html`<div style="display:flex;gap:2rem;align-items:center;flex-wrap:wrap;justify-content:center;margin:1rem auto 1.5rem;"></div>`;
 plotsRow.append(scatterContainer);
 plotsRow.append(worldContainer);
 display(plotsRow);
@@ -329,15 +338,17 @@ const yearFit = fitYearExponential(raw);
 const fi = createFilterInputs(yearFit);
 ```
 
-<p class="section-label">Filter & Explore</p>
-
 ```js
-const quadrant = view(fi.quadrant);
-const field = view(fi.field);
-const attitude = view(fi.attitude);
-const yearRange = view(fi.yearRange);
-const search = view(fi.search);
-// const sort = view(fi.sort);
+const _filterSection = html`<div class="filter-section">
+  <p class="section-label">Filter & Explore</p>
+</div>`;
+_filterSection.append(fi.quadrant, fi.field, fi.attitude, fi.yearRange, fi.search);
+display(_filterSection);
+const quadrant = Generators.input(fi.quadrant);
+const field = Generators.input(fi.field);
+const attitude = Generators.input(fi.attitude);
+const yearRange = Generators.input(fi.yearRange);
+const search = Generators.input(fi.search);
 ```
 
 ```js
@@ -381,6 +392,37 @@ Inputs.table(filtered.map(r => ({...r, quadrant: axisQuadrant(r)})), {
 })
 ```
 
+<div style="height:3rem"></div>
+
+<h2 class="header-2">Theoretical Background</h2>
+
+<div class="text">Correspondences between epistemological quadrants and Jung's psychological functions and attitudes [1]:
+
+<ul>
+  <li><b>Thinking as Abstract x Particular</b>: Jung describes <em>thinking</em> as being “confined to the linking up of ideas by means of a concept, in other words, to an act of judgment.” While the words “ideas” and “concept” imply a Distance attitude, Jung does not explicitly label thinking as Experiential. However, in my model, Thinking represents the <em>quantitative ordering</em> of the empirical world — turning discrete facts into logical systems.</li>
+  <li><b>Sensation as Participatory x Particular</b>: Jung defines <em>sensation</em> as “the psychological function that mediates the perception of a physical stimulus,” clearly situating it in the Experiential realm. While Jung does not use the term Participation, he notes that sensation and feeling often “ally” themselves to “an almost inseparable amalgam of feeling and sensation elements,” which, in my epistemological model, can be identified as the “left-side Participation alliance” immersed in the “here and now” of reality.</li>
+  <li><b>Feeling as Participatory x Universal</b>: Jung describes <em>feeling</em> as a process “that imparts to the content a definite value in the sense of acceptance or rejection (‘like’ or ‘dislike’)” and that it is “independent of external stimuli.” Thus, feeling is not Experiential; it evaluates experience based on Universal principles or “primordial images” of worth. It is a Participation function because the subject must “feel into” the value to realize its significance.</li>
+  <li><b>Intuition as Abstract x Universal</b>: Rooted in the Latin <em>intueri</em> (“to look at or into”), Jung describes <em>intuition</em> as perception “in an unconscious way” and as content presenting itself “whole and complete, without our being able to explain or discover how this content came into existence.” This description aligns with the “seeing of” or “looking at” Universal patterns or possibilities. The visual nature of intuition suggests a certain Distance — a detached apprehension of the “idea” or “archetypal pattern” of a situation.</li>
+  <li><b>Introversion and Extroversion as Depth (z-axis)</b>: Jung defines <em>introversion</em> as “an inward-turning of libido… a negative relation of subject to object,” and <em>extroversion</em> as “an outward-turning of libido… a positive movement of subjective interest towards the object.” Unlike the four functions, these two attitudes rely on the ontological categories of <em>subject and object</em> (inside and outside). While these categories are not strictly epistemological, they are near-universal structures found in most cosmic ontologies.</li>
+</ul>
+
+Goethe's Color Psychology [2]: 
+
+<ul>
+  <li>Goethe develop a kind of <em>color psychology</em> based on his participatory observations and experiments with light and colors by assigning six aesthetic qualities as well as four human cognitions to his color wheel.</li>
+  <li>He associated red with <em>beautiful</em>, orange with <em>noble</em>, yellow with <em>good</em>, green with <em>useful</em>, blue with <em>common</em>, and violet with <em>unnecessary</em>. The four assigned human cognitions are: <em>reason</em> (Vernunft) to the beautiful and the noble (red and orange), the <em>intellect</em> (Verstand) to the good and the useful (yellow and green), <em>sensuality</em> (Sinnlichkeit) to the useful and the common (green and blue) and, <em>imagination</em> (Phantasie) to the unnecessary and the beautiful (purple and red).</li>
+</ul>
+
+References:
+
+<ul>
+  <li>[1] Carl Gustav Jung, <a href=https://jungiancenter.org/wp-content/uploads/2023/09/Vol-6-psychological-types.pdf>Psychological Types</a> (in particular, chapter XI Definitions)</li>
+  <li>[2] Johann Wolfgang von Goethe, <a href=https://en.wikipedia.org/wiki/Theory_of_Colours>Theory of Colours</a></li>
+  <li>[3] Thilo Weber, <a href="https://www.zosimolab.ch/post/four-ways-of-knowing-part-1-an-epistemological-map">Four Ways of Knowing — Part&nbsp;1: An Epistemological Map</a> and <a href="https://www.zosimolab.ch/post/four-ways-of-knowing-part-2-comparative-and-critical-studies">Four Ways of Knowing — Part&nbsp;2: Comparative and Critical Studies</a></li>
+</ul>
+
+</div>
+
 <style>
   :root {
     /* badge backgrounds (table) */
@@ -400,17 +442,43 @@ Inputs.table(filtered.map(r => ({...r, quadrant: axisQuadrant(r)})), {
     letter-spacing: 0.02em;
     color: #c9a84c;
     margin-bottom: 0.4rem;
-    /* text-align: center; */
+    max-width: 860px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .subtitle {
     color: var(--theme-foreground-muted);
     font-style: italic;
     margin-bottom: 1rem;
-    /* text-align: center; */
-    max-width: 80%;
-    /* margin-left: auto;
-    margin-right: auto; */
+    max-width: 860px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .header-2 {
+    font-size: 1.6rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--theme-foreground-muted);
+    margin-bottom: 0.4rem;
+    max-width: 860px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .text {
+    color: var(--theme-foreground);
+    margin-bottom: 1rem;
+    max-width: 860px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .filter-section {
+    max-width: 660px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .section-label {
@@ -440,7 +508,7 @@ Inputs.table(filtered.map(r => ({...r, quadrant: axisQuadrant(r)})), {
     grid-template-columns: 1.6rem 1fr 1.6rem;
     grid-template-rows: 1.6rem auto 1.6rem;
     gap: 0.2rem;
-    /* margin: 1rem auto 1.5rem; */
+    margin: 1rem auto 1.5rem;
     max-width: 480px;
   }
 
@@ -558,6 +626,7 @@ Inputs.table(filtered.map(r => ({...r, quadrant: axisQuadrant(r)})), {
     width: 480px;
     height: 480px;
     flex-shrink: 0;
+    /* margin: 1rem auto 1.5rem; */
   }
 
   .scatter-bg {
