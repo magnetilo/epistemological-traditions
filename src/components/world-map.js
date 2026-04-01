@@ -78,7 +78,7 @@ export async function createWorldMap(filtered, { poly, onPolyChange, invalidatio
         ie:    d3.mean(rows, r => +(r.axis_ie) || 0),
         w:     d3.sum(rows,  r => +(r.weight) || 1),
         n:     rows.length,
-        names: rows.map(r => r.movement).filter(Boolean).sort()
+        names: rows.filter(r => r.movement).map(r => ({name: r.movement, year: +r.year})).sort((a, b) => a.year - b.year)
       }),
       r => {
         const pa = +r.axis_pa, pu = +r.axis_pu;
@@ -147,12 +147,13 @@ export async function createWorldMap(filtered, { poly, onPolyChange, invalidatio
         .style("cursor", "pointer")
         .on("mouseover", function(event) {
           const ieLabel = c.ie > 0 ? "Extroverted" : "Introverted";
+          const fmtY = y => y < 0 ? Math.abs(y) + " BCE" : y < 1000 ? "~" + y + " CE" : String(y);
           const shown = c.names.slice(0, 30);
           const more = c.names.length > 30 ? `<br><span style="opacity:0.45">… +${c.names.length - 30} more</span>` : "";
           tooltip.style("opacity", "1").html(
             `<strong style="color:${color}">${c.q} · ${ieLabel}</strong> <span style="opacity:0.6">${c.n} traditions</span>` +
             `<hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:0.3rem 0">` +
-            shown.join("<br>") + more
+            shown.map(t => `${t.name} <span style="opacity:0.45">(${fmtY(t.year)})</span>`).join("<br>") + more
           );
         })
         .on("mousemove", function(event) {
