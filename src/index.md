@@ -40,7 +40,7 @@ title: Epistemological Traditions Map
 
 <h2 class="header-2">Traditions Visualizations</h2>
 
-<p class="text">Mapping historical traditions into epistemological-psychological model (first plot) and the world coordinate system (second plot). The colors of each cluster of traditions is determined by aligning its angle in the epistemological-psychological space with Goethe's color wheel [2]. The opacity of the clusters' filling is determined by the (average) attitude, with low opacity signaling an introverted orientation and stronger opacity signaling an extroverted orientation. Explore the traditions data by hovering over the maps and apply filters. The full filtered dataset is shown in the table below.
+<p class="text">Projecting each tradition onto the epistemological-psychological map (left/first plot) and onto the world map by its region of origin (rigth/second plot). The color of each cluster is determined by aligning its angle in the epistemological-psychological space with Goethe's color wheel [2]. The opacity of each cluster's fill reflects its (average) attitude: low opacity signals an introverted orientation, stronger opacity an extroverted one. Hover over either map to explore the data, apply filters to narrow the selection, and browse the full filtered dataset in the table below.
 </p>
 
 
@@ -70,7 +70,7 @@ const geoFilter = wPolyMutable != null
 ```js
 const scatterEl = createScatterMap(filtered);
 const worldEl = await createWorldMap(filtered, { poly: wPolyMutable, onPolyChange: setWPoly, invalidation });
-const plotsRow = html`<div style="display:flex;gap:2rem;align-items:center;flex-wrap:wrap;justify-content:center;margin:1rem auto 1.5rem;"></div>`;
+const plotsRow = html`<div class="grid grid-cols-2" style="align-items:center;justify-items:center;"></div>`;
 plotsRow.append(scatterEl, worldEl);
 display(plotsRow);
 ```
@@ -135,24 +135,30 @@ Inputs.table(filtered.map(r => ({...r, quadrant: axisQuadrant(r)})), {
 
 <h2 class="header-2">Theory & Background</h2>
 
-<div class="text">Correspondences between epistemological quadrants and Jung's psychological functions and attitudes [1]:
+<h3 class="header-3">Correspondences between epistemological quadrants and Jung's psychological functions and attitudes [1]</h3>
 
-<ul>
-  <li><b>Thinking as Abstract x Particular</b>: Jung describes <em>thinking</em> as being “confined to the linking up of ideas by means of a concept, in other words, to an act of judgment.” While the words “ideas” and “concept” imply a Distance attitude, Jung does not explicitly label thinking as Experiential. However, in my model, Thinking represents the <em>quantitative ordering</em> of the empirical world — turning discrete facts into logical systems.</li>
-  <li><b>Sensation as Participatory x Particular</b>: Jung defines <em>sensation</em> as “the psychological function that mediates the perception of a physical stimulus,” clearly situating it in the Experiential realm. While Jung does not use the term Participation, he notes that sensation and feeling often “ally” themselves to “an almost inseparable amalgam of feeling and sensation elements,” which, in my epistemological model, can be identified as the “left-side Participation alliance” immersed in the “here and now” of reality.</li>
-  <li><b>Feeling as Participatory x Universal</b>: Jung describes <em>feeling</em> as a process “that imparts to the content a definite value in the sense of acceptance or rejection (‘like’ or ‘dislike’)” and that it is “independent of external stimuli.” Thus, feeling is not Experiential; it evaluates experience based on Universal principles or “primordial images” of worth. It is a Participation function because the subject must “feel into” the value to realize its significance.</li>
-  <li><b>Intuition as Abstract x Universal</b>: Rooted in the Latin <em>intueri</em> (“to look at or into”), Jung describes <em>intuition</em> as perception “in an unconscious way” and as content presenting itself “whole and complete, without our being able to explain or discover how this content came into existence.” This description aligns with the “seeing of” or “looking at” Universal patterns or possibilities. The visual nature of intuition suggests a certain Distance — a detached apprehension of the “idea” or “archetypal pattern” of a situation.</li>
-  <li><b>Introversion and Extroversion as Depth (z-axis)</b>: Jung defines <em>introversion</em> as “an inward-turning of libido… a negative relation of subject to object,” and <em>extroversion</em> as “an outward-turning of libido… a positive movement of subjective interest towards the object.” Unlike the four functions, these two attitudes rely on the ontological categories of <em>subject and object</em> (inside and outside). While these categories are not strictly epistemological, they are near-universal structures found in most cosmic ontologies.</li>
-</ul>
+<p class="text"><b>Thinking as Abstract x Particular</b>:</br>
+Jung describes <em>thinking</em> as being “confined to the linking up of ideas by means of a concept, in other words, to an act of judgment.” While the words “ideas” and “concept” imply a Distance attitude, Jung does not explicitly label thinking as Experiential. However, in my model, Thinking represents the <em>quantitative ordering</em> of the empirical world — turning discrete facts into logical systems.</p>
 
-Goethe's Color Psychology [2]: 
+<p class="text"><b>Sensation as Participatory x Particular</b>:</br>
+Jung defines <em>sensation</em> as “the psychological function that mediates the perception of a physical stimulus,” clearly situating it in the Experiential realm. While Jung does not use the term Participation, he notes that sensation and feeling often “ally” themselves to “an almost inseparable amalgam of feeling and sensation elements,” which, in my epistemological model, can be identified as the “left-side Participation alliance” immersed in the “here and now” of reality.</p>
 
-<ul>
-  <li>Goethe develop a kind of <em>color psychology</em> based on his participatory observations and experiments with light and colors by assigning six aesthetic qualities as well as four human cognitions to his color wheel.</li>
-  <li>He associated red with <em>beautiful</em>, orange with <em>noble</em>, yellow with <em>good</em>, green with <em>useful</em>, blue with <em>common</em>, and violet with <em>unnecessary</em>. The four assigned human cognitions are: <em>reason</em> (Vernunft) to the beautiful and the noble (red and orange), the <em>intellect</em> (Verstand) to the good and the useful (yellow and green), <em>sensuality</em> (Sinnlichkeit) to the useful and the common (green and blue) and, <em>imagination</em> (Phantasie) to the unnecessary and the beautiful (purple and red).</li>
-</ul>
+<p class="text"><b>Feeling as Participatory x Universal</b>:</br>
+Jung describes <em>feeling</em> as a process “that imparts to the content a definite value in the sense of acceptance or rejection (‘like’ or ‘dislike’)” and that it is “independent of external stimuli.” Thus, feeling is not Experiential; it evaluates experience based on Universal principles or “primordial images” of worth. It is a Participation function because the subject must “feel into” the value to realize its significance.</p>
 
-References:
+<p class="text"><b>Intuition as Abstract x Universal</b>:</br>
+Rooted in the Latin <em>intueri</em> (“to look at or into”), Jung describes <em>intuition</em> as perception “in an unconscious way” and as content presenting itself “whole and complete, without our being able to explain or discover how this content came into existence.” This description aligns with the “seeing of” or “looking at” Universal patterns or possibilities. The visual nature of intuition suggests a certain Distance — a detached apprehension of the “idea” or “archetypal pattern” of a situation.</p>
+
+<p class="text"><b>Introversion and Extroversion as Depth (z-axis)</b>:</br>
+Jung defines <em>introversion</em> as “an inward-turning of libido… a negative relation of subject to object,” and <em>extroversion</em> as “an outward-turning of libido… a positive movement of subjective interest towards the object.” Unlike the four functions, these two attitudes rely on the ontological categories of <em>subject and object</em> (inside and outside). While these categories are not strictly epistemological, they are near-universal structures found in most cosmic ontologies.</p>
+
+<h3 class="header-3">Goethe's Color Psychology [2]</h3>
+
+<p class="text">Goethe develop a kind of <em>color psychology</em> based on his participatory observations and experiments with light and colors by assigning six aesthetic qualities as well as four human cognitions to his color wheel.</p>
+
+<p class="text">He associated red with <em>beautiful</em>, orange with <em>noble</em>, yellow with <em>good</em>, green with <em>useful</em>, blue with <em>common</em>, and violet with <em>unnecessary</em>. The four assigned human cognitions are: <em>reason</em> (Vernunft) to the beautiful and the noble (red and orange), the <em>intellect</em> (Verstand) to the good and the useful (yellow and green), <em>sensuality</em> (Sinnlichkeit) to the useful and the common (green and blue) and, <em>imagination</em> (Phantasie) to the unnecessary and the beautiful (purple and red).</p>
+
+<h3 class="header-3">References</h3>
 
 <ul>
   <li>[1] Carl Gustav Jung, <a href=https://jungiancenter.org/wp-content/uploads/2023/09/Vol-6-psychological-types.pdf>Psychological Types</a> (in particular, chapter XI Definitions)</li>
@@ -206,6 +212,30 @@ References:
     margin-right: auto;
   }
 
+  .header-3 {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--theme-foreground-muted);
+    margin-bottom: 0.4rem;
+    max-width: 860px;
+    width: 100%;
+    box-sizing: border-box;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  ul {
+    color: var(--theme-foreground);
+    margin-bottom: 1rem;
+    max-width: 860px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1.5rem;
+    box-sizing: border-box;
+  }
+
   .text {
     color: var(--theme-foreground);
     margin-bottom: 1rem;
@@ -249,6 +279,8 @@ References:
     gap: 0.2rem;
     margin: 1rem auto 1.5rem;
     max-width: 480px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .qmap-top, .qmap-bottom, .qmap-left, .qmap-right {
@@ -358,14 +390,13 @@ References:
     margin-bottom: 1.5rem;
   }
 
-  .quadrant-map { flex-shrink: 0; }
+  .quadrant-map { width: 100%; }
 
   #scatter-container {
     position: relative;
-    width: 480px;
-    height: 480px;
-    flex-shrink: 0;
-    /* margin: 1rem auto 1.5rem; */
+    width: min(480px, 100%);
+    aspect-ratio: 1 / 1;
+    height: auto;
   }
 
   .scatter-bg {
@@ -397,12 +428,21 @@ References:
   }
 
   .sbg-cell { opacity: 0.12; }
+
+  @media (max-width: 640px) {
+    .grid-cols-2 {
+      grid-template-columns: 1fr;
+    }
+    .map-row {
+      justify-content: center;
+    }
+  }
   .sbg-PxU { background: radial-gradient(ellipse 120% 120% at 0%   0%,   hsl(268, 55%, 26%), transparent); }
   .sbg-AxU { background: radial-gradient(ellipse 120% 120% at 100% 0%,   hsl(18,  65%, 28%), transparent); }
   .sbg-PxP { background: radial-gradient(ellipse 120% 120% at 0%   100%, hsl(200, 58%, 24%), transparent); }
   .sbg-AxP { background: radial-gradient(ellipse 120% 120% at 100% 100%, hsl(83,  52%, 22%), transparent); }
 
-  #scatter-svg {
+  #scatter-svg-el {
     position: absolute;
     inset: 0;
     width: 100%;

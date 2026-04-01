@@ -13,8 +13,8 @@ function clusterColor(pa, pu) {
 }
 
 // ── Projection (module-level constant — exported for geoFilter in index.md) ──
-export const WW = 0.9 * 640;
-export const WH = 0.9 * 340;
+export const WW = 0.9 * 800;
+export const WH = 0.9 * 425;
 export const wProjection = d3.geoNaturalEarth1().fitSize([WW, WH], { type: "Sphere" });
 const wPath = d3.geoPath(wProjection);
 
@@ -93,8 +93,8 @@ export async function createWorldMap(filtered, { poly, onPolyChange, invalidatio
   // ── Build DOM ─────────────────────────────────────────────────────────────
   const worldContainer = document.createElement("div");
   worldContainer.id = "world-container";
-  worldContainer.style.cssText = `position:relative;width:${WW}px;height:${WH}px;flex-shrink:0;border-radius:4px;overflow:hidden`;
-  worldContainer.innerHTML = `<svg id="world-svg-el" width="${WW}" height="${WH}" viewBox="0 0 ${WW} ${WH}"></svg>`;
+  worldContainer.style.cssText = `position:relative;width:min(${WW}px, 100%);aspect-ratio:${WW}/${WH};height:auto;flex-shrink:0;border-radius:4px;overflow:hidden`;
+  worldContainer.innerHTML = `<svg id="world-svg-el" width="100%" height="100%" viewBox="0 0 ${WW} ${WH}"></svg>`;
 
   const wSvg = d3.select(worldContainer.querySelector("#world-svg-el"));
   wSvg.append("rect").attr("width", WW).attr("height", WH).attr("fill", "rgba(15, 15, 15, 0.92)");

@@ -57,8 +57,9 @@ export function createScatterMap(filtered) {
     <svg id="scatter-svg-el"></svg>`;
 
   const sSvg = d3.select(container.querySelector("#scatter-svg-el"))
-    .attr("width", S).attr("height", S)
-    .attr("viewBox", `0 0 ${S} ${S}`);
+    .attr("viewBox", `0 0 ${S} ${S}`)
+    .style("position", "absolute").style("inset", "0")
+    .style("width", "100%").style("height", "100%");
 
   // Crosshair
   sSvg.append("line").attr("x1", spx(0)).attr("x2", spx(0)).attr("y1", SPAD).attr("y2", S - SPAD)

@@ -217,13 +217,16 @@ export function createYearRangeInput(minVal = -40000, maxVal = 2000, step = 500,
     const s = document.createElement("style");
     s.id = styleId;
     s.textContent = `
-      .yr-row { display: flex; align-items: center; gap: 0.75rem;
+      .yr-row { display: flex; align-items: flex-start; gap: 0.75rem; flex-wrap: wrap;
         font-family: var(--sans-serif, sans-serif); font-size: 0.85rem; padding: 0.2rem 0; }
       .yr-lbl { flex: 0 0 120px; color: var(--theme-foreground, #ffffff); }
-      .yr-body { display: flex; align-items: center; gap: 0.6rem; flex: 1; min-width: 0; }
-      .yr-svg-wrap { flex: 0 0 300px; width: 300px; min-width: 0; }
-      .yr-vals { flex: 0 0 auto; font-family: 'JetBrains Mono', monospace;
-        font-size: 0.65rem; color: var(--theme-foreground, #ffffff); white-space: nowrap; }
+      .yr-body { display: flex; flex-direction: column; gap: 0.2rem; flex: 1; min-width: 0; }
+      .yr-svg-wrap { width: 100%; }
+      .yr-vals { display: block; width: 100%; font-family: 'JetBrains Mono', monospace;
+        font-size: 0.65rem; color: var(--theme-foreground-muted, #999); white-space: nowrap; text-align: right; }
+      @media (max-width: 479px) {
+        .yr-lbl { flex: 0 0 100%; }
+      }
     `;
     document.head.appendChild(s);
   }
